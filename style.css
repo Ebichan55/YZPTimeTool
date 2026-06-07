@@ -1,0 +1,63 @@
+body {
+  font-family: sans-serif;
+  margin: 20px;
+  background: #f5f5f5;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+section {
+  margin-bottom: 25px;
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.clock {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #333;
+}
+
+#march-list div {
+  margin-bottom: 10px;
+}
+
+input[type="text"],
+input[type="time"],
+input[type="datetime-local"] {
+  padding: 6px;
+  margin-right: 10px;
+}
+
+.btn {
+  padding: 8px 15px;
+  background: #0078ff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #005fcc;
+}
+
+.calc {
+  background: #28a745;
+}
+
+.calc:hover {
+  background: #1e7e34;
+}
+
+#result p {
+  background: #eef;
+  padding: 8px;
+  border-radius: 5px;
+  margin-bottom: 5px;
+}
