@@ -83,3 +83,33 @@ input[type="number"] {
   margin-bottom: 10px;
   font-size: 18px;
 }
+
+.menu-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.menu-btn {
+  width: 75%;              /* 横幅を75%にして長すぎず短すぎず */
+  max-width: 300px;        /* タブレットでも大きくなりすぎない */
+  padding: 14px;
+  font-size: 18px;
+  text-align: center;
+  border-radius: 12px;
+  font-weight: bold;
+  text-decoration: none;
+  color: white;
+  background: #007aff;     /* iOSブルー */
+}
+
+.menu-btn.calc {
+  background: #34c759;     /* iOSグリーン */
+}
+
+.menu-btn:active {
+  opacity: 0.8;
+}
+
