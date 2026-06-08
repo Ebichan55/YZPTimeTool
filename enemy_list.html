@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>敵リスト管理</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>敵リスト管理</h1>
+
+  <section>
+    <h2>敵を追加</h2>
+    <input type="text" id="enemy-name" placeholder="敵名">
+    <input type="number" id="enemy-march" placeholder="行軍時間（秒）">
+    <button id="add" class="btn">追加</button>
+  </section>
+
+  <section>
+    <h2>登録済みの敵</h2>
+    <div id="enemy-list"></div>
+  </section>
+
+  <section>
+    <a href="calc.html" class="btn calc">計算ページへ</a>
+  </section>
+
+  <script>
+    function loadEnemies() {
+      const list = JSON.parse(localStorage.getItem("enemies") || "[]");
+      const div = document.getElementById("enemy-list");
+      div.innerHTML = "";
+
+      list.forEach((e, index) => {
+        div.innerHTML += `
+          <div class="enemy-card">
+            <p>${e.name}（${e.march}秒）</p>
+            <button class="btn delete" onclick="deleteEnemy(${index})">削除</button>
+          </div>
+        `;
+      });
+    }
+
+    function deleteEnemy(index) {
+      const list = JSON.parse(localStorage.getItem("enemies") || "[]");
+      list.splice(index, 1);
+      localStorage.setItem("enemies", JSON.stringify(list));
+      loadEnemies();
+    }
+
+    document.getElementById("add").onclick = () => {
+      const name = document.getElementById("enemy-name").value;
+      const march = Number(document.getElementById("enemy-march").value);
+
+      if (!name || march <= 0) return;
+
+      const list = JSON.parse(localStorage.getItem("enemies") || "[]");
+      list.push({ name, march });
+      localStorage.setItem("enemies", JSON.stringify(list));
+
+      loadEnemies();
+    };
+
+    loadEnemies();
+  </script>
+
+</body>
+</html>
