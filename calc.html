@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>敵着弾計算</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>敵着弾計算</h1>
+
+  <section>
+    <a href="enemy_list.html" class="btn">← 敵リスト管理へ戻る</a>
+  </section>
+
+  <section>
+    <h2>現在の UTC 時刻</h2>
+    <div id="utc-clock" class="clock"></div>
+  </section>
+
+  <section>
+    <h2>敵一覧</h2>
+    <div id="calc-list"></div>
+  </section>
+
+  <script>
+    const enemies = JSON.parse(localStorage.getItem("enemies") || "[]");
+    const listDiv = document.getElementById("calc-list");
+
+    // 秒 → MMSS
+    function secToMMSS(sec) {
+      sec = ((sec % 3600) + 3600) % 3600;
+      const mm = String(Math.floor(sec / 60)).padStart(2, "0");
+      const ss = String(sec % 60).padStart(2, "0");
+      return mm + ss;
+    }
+
+    // UTC時計（リアルタイム表示のみ）
+    function updateUTC() {
+      const now = new Date();
+      document.getElementById("utc-clock").textContent =
+        now.toISOString().slice(11, 19) + " UTC";
+    }
+    setInterval(updateUTC, 1000);
+    updateUTC();
+
+    // 敵一覧を表示
+    enemies.forEach((e, index) => {
+      const row = document.createElement("div");
+      row.className = "enemy-card";
+
+      row.innerHTML = `
+        <p><b>${e.name}</b>（行軍 ${e.march}秒）</p>
+        <input type="text" id="remain-${index}" placeholder="残り時間 MMSS">
+        <button class="btn calc" onclick="calcHit(${index})">計算</button>
+        <p id="result-${index}" class="result"></p>
+      `;
+
+      listDiv.appendChild(row);
+    });
+
+    // 計算（スナップショット）
+    function calcHit(index) {
+      const e = enemies[index];
+      const mmss = document.getElementById(`remain-${index}`).value;
+      const result = document.getElementById(`result-${index}`);
+
+      if (mmss.length !== 4) {
+        result.textContent = "MMSS形式で入力";
+        return;
+      }
+
+      const mm = Number(mmss.slice(0, 2));
+      const ss = Number(mmss.slice(2, 4));
+      const remainSec = mm * 60 + ss;
+
+      // 計算ボタンを押した瞬間のUTC
+      const now = new Date();
+      const nowSec = now.getUTCMinutes() * 60 + now.getUTCSeconds();
+
+      const hitRemain = remainSec + e.march;
+      const hitUTCsec = nowSec + hitRemain;
+
+      const hitUTC = secToMMSS(hitUTCsec);
+
+      result.textContent = `着弾UTC：${hitUTC}`;
+    }
+  </script>
+
+</body>
+</html>
