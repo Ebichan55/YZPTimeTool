@@ -53,6 +53,16 @@ input[type="number"] {
   font-weight: bold;
   margin-top: 10px;
 }
+/* 削除ボタン（くすんだ赤） */
+.btn.delete {
+  background: #d9534f;
+  color: white;
+}
+
+.btn.delete:active {
+  background: #c9302c;
+}
+
 
 .btn:active {
   background: #005fcc;
