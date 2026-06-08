@@ -2,15 +2,15 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>敵着弾計算</title>
+  <title>相手着弾計算</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <h1>敵着弾計算</h1>
+  <h1>相手着弾計算</h1>
 
   <section>
-    <a href="enemy_list.html" class="btn">← 敵リスト管理へ戻る</a>
+    <a href="enemy_list.html" class="btn">← 相手リスト管理へ戻る</a>
   </section>
 
   <section>
@@ -19,7 +19,7 @@
   </section>
 
   <section>
-    <h2>敵一覧</h2>
+    <h2>相手一覧</h2>
     <div id="calc-list"></div>
   </section>
 
@@ -44,7 +44,7 @@
     setInterval(updateUTC, 1000);
     updateUTC();
 
-    // 敵一覧を表示
+    // 相手一覧を表示
     enemies.forEach((e, index) => {
       const row = document.createElement("div");
       row.className = "enemy-card";
