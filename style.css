@@ -113,3 +113,28 @@ input[type="number"] {
   opacity: 0.8;
 }
 
+/* ======== 共通メニューバー ======== */
+.nav-bar {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  background: #ffffff;
+  padding: 10px 0;
+  display: flex;
+  justify-content: space-around;
+  border-bottom: 1px solid #d1d1d6;
+}
+
+.nav-bar a {
+  font-size: 14px;
+  color: #007aff;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 6px 4px;
+}
+
+.nav-bar a:active {
+  opacity: 0.6;
+}
+
+
