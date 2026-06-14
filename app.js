@@ -77,4 +77,13 @@ document.getElementById("calc").onclick = () => {
 
     result.innerHTML += `<p>${e.name} → 着弾UTC：${hitUTC}</p>`;
   });
+  function updateUTC() {
+    const now = new Date();
+    document.getElementById("utc-clock").textContent =
+      now.toISOString().slice(11, 19) + " UTC";
+  }
+  setInterval(updateUTC, 1000);
+  updateUTC();
+
+  
 };
