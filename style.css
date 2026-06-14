@@ -1,10 +1,22 @@
 body {
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   margin: 0;
-  padding: 16px;
-  background: #f2f2f7;
-  color: #1c1c1e;
+  padding: 0;
+  position: relative;
+  min-height: 100vh;
+  background: url("main_image.png") center/cover no-repeat fixed;
+  z-index: 0; /* 背景を一番下に */
 }
+
+/* 背景の上にだけ透過レイヤーを敷く */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.6); /* 透過レイヤー */
+  z-index: -1; /* ← これが超重要！ 背景の後ろに置く */
+}
+
+
 
 h1 {
   text-align: center;
