@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>味方同期計算</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+
+  <nav class="nav-bar">
+    <a href="index.html">メニュー</a>
+    <a href="enemy_list.html">相手リスト</a>
+    <a href="calc.html">相手着弾計算</a>
+    <a href="ally_list.html">味方リスト</a>
+    <a href="ally_sync.html">差し込み計算</a>
+  </nav>
+  <h1>味方差し込み計算</h1>
+
+  <section>
+    <h2>相手の着弾UTC（MMSS）</h2>
+    <input type="text" id="enemy-hit" placeholder="例：0455">
+  </section>
+
+  <section>
+    <button id="calc" class="btn calc">計算する</button>
+  </section>
+
+  <section>
+    <h2>味方の出発UTC</h2>
+    <div id="result"></div>
+  </section>
+
+  <script>
+    const allies = JSON.parse(localStorage.getItem("allies") || "[]");
+
+    function secToMMSS(sec) {
+      sec = ((sec % 3600) + 3600) % 3600;
+      const mm = String(Math.floor(sec / 60)).padStart(2, "0");
+      const ss = String(sec % 60).padStart(2, "0");
+      return mm + ss;
+    }
+
+    document.getElementById("calc").onclick = () => {
+      const result = document.getElementById("result");
+      result.innerHTML = "";
+
+      const mmss = document.getElementById("enemy-hit").value;
+      if (mmss.length !== 4) {
+        result.innerHTML = "MMSS形式で入力してください";
+        return;
+      }
+
+      const mm = Number(mmss.slice(0, 2));
+      const ss = Number(mmss.slice(2, 4));
+      const enemyHitSec = mm * 60 + ss;
+
+      allies.forEach(a => {
+        const departSec = enemyHitSec - a.march;
+        const departMMSS = secToMMSS(departSec);
+
+        result.innerHTML += `
+          <p>${a.name} → 出発UTC：${departMMSS}</p>
+        `;
+      });
+    };
+  </script>
+
+</body>
+</html>
