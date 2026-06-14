@@ -8,7 +8,7 @@ body {
 
 h1 {
   text-align: center;
-  font-size: 22px;
+  font-size: 40px;
   margin-bottom: 20px;
 }
 
@@ -93,16 +93,16 @@ input[type="number"] {
 }
 
 .menu-btn {
-  width: 75%;              /* 横幅を75%にして長すぎず短すぎず */
+  width: 90%;              /* 横幅を75%にして長すぎず短すぎず */
   max-width: 300px;        /* タブレットでも大きくなりすぎない */
-  padding: 14px;
-  font-size: 18px;
+  padding: 45px;
+  font-size: 25px;
   text-align: center;
   border-radius: 12px;
   font-weight: bold;
   text-decoration: none;
   color: white;
-  background: #007aff;     /* iOSブルー */
+  background: #9050a3;     /* iOSブルー */
 }
 
 .menu-btn.calc {
