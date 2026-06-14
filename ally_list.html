@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>味方リスト管理</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+
+  <nav class="nav-bar">
+    <a href="index.html">メニュー</a>
+    <a href="enemy_list.html">相手リスト</a>
+    <a href="calc.html">相手着弾計算</a>
+    <a href="ally_list.html">味方リスト</a>
+    <a href="ally_sync.html">差し込み計算</a>
+  </nav>
+  <h1>味方リスト管理</h1>
+
+
+  <section>
+    <input type="text" id="ally-name" placeholder="味方名">
+    <input type="number" id="ally-march" placeholder="行軍時間（秒）">
+    <button id="add" class="btn">追加</button>
+  </section>
+
+  <section>
+    <h2>登録済みの味方</h2>
+    <div id="ally-list"></div>
+  </section>
+
+  <script>
+    function loadAllies() {
+      const list = JSON.parse(localStorage.getItem("allies") || "[]");
+      const div = document.getElementById("ally-list");
+      div.innerHTML = "";
+
+      list.forEach((a, index) => {
+        div.innerHTML += `
+          <div class="enemy-card">
+            <p>${a.name}（${a.march}秒）</p>
+            <button class="btn delete" onclick="deleteAlly(${index})">削除</button>
+          </div>
+        `;
+      });
+    }
+
+    function deleteAlly(index) {
+      const list = JSON.parse(localStorage.getItem("allies") || "[]");
+      list.splice(index, 1);
+      localStorage.setItem("allies", JSON.stringify(list));
+      loadAllies();
+    }
+
+    document.getElementById("add").onclick = () => {
+      const name = document.getElementById("ally-name").value;
+      const march = Number(document.getElementById("ally-march").value);
+
+      if (!name || march <= 0) return;
+
+      const list = JSON.parse(localStorage.getItem("allies") || "[]");
+      list.push({ name, march });
+      localStorage.setItem("allies", JSON.stringify(list));
+
+      loadAllies();
+    };
+
+    loadAllies();
+  </script>
+
+</body>
+</html>
