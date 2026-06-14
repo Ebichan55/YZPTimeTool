@@ -7,11 +7,15 @@
 </head>
 <body>
 
-  <h1>相手着弾計算</h1>
+  <nav class="nav-bar">
+    <a href="index.html">メニュー</a>
+    <a href="enemy_list.html">相手リスト</a>
+    <a href="calc.html">相手着弾計算</a>
+    <a href="ally_list.html">味方リスト</a>
+    <a href="ally_sync.html">差し込み計算</a>
+  </nav>
 
-  <section>
-    <a href="enemy_list.html" class="btn">← 相手リスト管理へ戻る</a>
-  </section>
+  <h1>相手着弾計算</h1>
 
   <section>
     <h2>現在の UTC 時刻</h2>
@@ -19,11 +23,19 @@
   </section>
 
   <section>
-    <h2>相手一覧</h2>
+    <h2>UTC補正（秒）</h2>
+    <input type="number" id="utc-offset" placeholder="例：+40 / -20">
+    <button class="btn" onclick="saveOffset()">補正を保存</button>
+  </section>
+
+  <section>
+    <h2>敵一覧</h2>
     <div id="calc-list"></div>
   </section>
 
+  <script src="server_time.js"></script>
   <script>
+
     const enemies = JSON.parse(localStorage.getItem("enemies") || "[]");
     const listDiv = document.getElementById("calc-list");
 
@@ -35,16 +47,26 @@
       return mm + ss;
     }
 
-    // UTC時計（リアルタイム表示のみ）
+    // 補正後UTC時計
     function updateUTC() {
-      const now = new Date();
+      const now = getServerNow();
+      const date = new Date(now * 1000);
+
       document.getElementById("utc-clock").textContent =
-        now.toISOString().slice(11, 19) + " UTC";
+        date.toISOString().slice(11, 19) + " (UTC)";
     }
     setInterval(updateUTC, 1000);
     updateUTC();
 
-    // 相手一覧を表示
+    // 補正値保存
+    function saveOffset() {
+      const v = Number(document.getElementById("utc-offset").value);
+      setOffset(v);
+      alert("補正値を追加しました");
+    }
+
+
+    // 敵一覧
     enemies.forEach((e, index) => {
       const row = document.createElement("div");
       row.className = "enemy-card";
@@ -59,7 +81,7 @@
       listDiv.appendChild(row);
     });
 
-    // 計算（スナップショット）
+    // 計算（補正後UTC基準）
     function calcHit(index) {
       const e = enemies[index];
       const mmss = document.getElementById(`remain-${index}`).value;
@@ -74,9 +96,9 @@
       const ss = Number(mmss.slice(2, 4));
       const remainSec = mm * 60 + ss;
 
-      // 計算ボタンを押した瞬間のUTC
-      const now = new Date();
-      const nowSec = now.getUTCMinutes() * 60 + now.getUTCSeconds();
+      const now = getServerNow();
+      const date = new Date(now * 1000);
+      const nowSec = date.getUTCMinutes() * 60 + date.getUTCSeconds();
 
       const hitRemain = remainSec + e.march;
       const hitUTCsec = nowSec + hitRemain;
