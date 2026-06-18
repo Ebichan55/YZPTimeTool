@@ -6,10 +6,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <script src="server_time.js"></script>
-  <script>
-    updateServerTime(); // 初回だけ
-  </script>
+  <!-- server_time.js は使用しないため削除 -->
 
 
     <h1>メニュー</h1>
@@ -19,7 +16,19 @@
     <a href="enemy_list.html" class="menu-btn">相手リスト管理</a>
     <a href="calc.html" class="menu-btn calc">相手着弾計算</a>
     <a href="ally_sync.html" class="menu-btn calc">味方差し込み計算</a>
+    <a href="settings.html" class="menu-btn">設定</a>
   </div>
+
+  <script>
+    // 背景状態を読み込む
+    function loadBackgroundState() {
+      const bgEnabled = localStorage.getItem("backgroundEnabled");
+      if (bgEnabled === "false") {
+        document.body.classList.add("bg-off");
+      }
+    }
+    loadBackgroundState();
+  </script>
 
 
 </body>
