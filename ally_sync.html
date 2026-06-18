@@ -14,6 +14,7 @@
     <a href="calc.html">相手着弾計算</a>
     <a href="ally_list.html">味方リスト</a>
     <a href="ally_sync.html">差し込み計算</a>
+    <a href="settings.html">設定</a>
   </nav>
   <h1>味方差し込み計算</h1>
 
@@ -32,6 +33,14 @@
   </section>
 
   <script>
+    function loadBackgroundState() {
+      const bgEnabled = localStorage.getItem("backgroundEnabled");
+      if (bgEnabled === "false") {
+        document.body.classList.add("bg-off");
+      }
+    }
+    loadBackgroundState();
+
     const allies = JSON.parse(localStorage.getItem("allies") || "[]");
 
     function secToMMSS(sec) {
@@ -45,14 +54,20 @@
       const result = document.getElementById("result");
       result.innerHTML = "";
 
-      const mmss = document.getElementById("enemy-hit").value;
-      if (mmss.length !== 4) {
+      if (allies.length === 0) {
+        result.innerHTML = "味方が登録されていません。味方リストで登録してください。";
+        return;
+      }
+
+      const mmss = document.getElementById("enemy-hit").value.trim();
+      const normalized = mmss.replace(/\D/g, "");
+      if (normalized.length !== 4) {
         result.innerHTML = "MMSS形式で入力してください";
         return;
       }
 
-      const mm = Number(mmss.slice(0, 2));
-      const ss = Number(mmss.slice(2, 4));
+      const mm = Number(normalized.slice(0, 2));
+      const ss = Number(normalized.slice(2, 4));
       const enemyHitSec = mm * 60 + ss;
 
       allies.forEach(a => {
