@@ -14,6 +14,7 @@
     <a href="calc.html">相手着弾計算</a>
     <a href="ally_list.html">味方リスト</a>
     <a href="ally_sync.html">差し込み計算</a>
+    <a href="settings.html">設定</a>
   </nav>
   <h1>味方リスト管理</h1>
 
@@ -30,6 +31,14 @@
   </section>
 
   <script>
+    function loadBackgroundState() {
+      const bgEnabled = localStorage.getItem("backgroundEnabled");
+      if (bgEnabled === "false") {
+        document.body.classList.add("bg-off");
+      }
+    }
+    loadBackgroundState();
+
     function loadAllies() {
       const list = JSON.parse(localStorage.getItem("allies") || "[]");
       const div = document.getElementById("ally-list");
@@ -62,6 +71,8 @@
       list.push({ name, march });
       localStorage.setItem("allies", JSON.stringify(list));
 
+      document.getElementById("ally-name").value = "";
+      document.getElementById("ally-march").value = "";
       loadAllies();
     };
 
