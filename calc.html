@@ -13,28 +13,31 @@
     <a href="calc.html">相手着弾計算</a>
     <a href="ally_list.html">味方リスト</a>
     <a href="ally_sync.html">差し込み計算</a>
+    <a href="settings.html">設定</a>
   </nav>
 
   <h1>相手着弾計算</h1>
 
   <section>
-    <h2>現在の UTC 時刻</h2>
-    <div id="utc-clock" class="clock"></div>
+    <h2>現在の UTC 時刻（MMSS）</h2>
+    <p>※UTCは手動でMMSS形式で入力してください。</p>
+    <input type="text" id="utc-manual" placeholder="例：0130">
   </section>
 
-  <section>
-    <h2>UTC補正（秒）</h2>
-    <input type="number" id="utc-offset" placeholder="例：+40 / -20">
-    <button class="btn" onclick="saveOffset()">補正を保存</button>
-  </section>
 
   <section>
     <h2>敵一覧</h2>
     <div id="calc-list"></div>
   </section>
 
-  <script src="server_time.js"></script>
   <script>
+    function loadBackgroundState() {
+      const bgEnabled = localStorage.getItem("backgroundEnabled");
+      if (bgEnabled === "false") {
+        document.body.classList.add("bg-off");
+      }
+    }
+    loadBackgroundState();
 
     const enemies = JSON.parse(localStorage.getItem("enemies") || "[]");
     const listDiv = document.getElementById("calc-list");
@@ -47,23 +50,7 @@
       return mm + ss;
     }
 
-    // 補正後UTC時計
-    function updateUTC() {
-      const now = getServerNow();
-      const date = new Date(now * 1000);
-
-      document.getElementById("utc-clock").textContent =
-        date.toISOString().slice(11, 19) + " (UTC)";
-    }
-    setInterval(updateUTC, 1000);
-    updateUTC();
-
-    // 補正値保存
-    function saveOffset() {
-      const v = Number(document.getElementById("utc-offset").value);
-      setOffset(v);
-      alert("補正値を追加しました");
-    }
+    // 手動UTC入力を使用する（MMSS）
 
 
     // 敵一覧
@@ -96,9 +83,15 @@
       const ss = Number(mmss.slice(2, 4));
       const remainSec = mm * 60 + ss;
 
-      const now = getServerNow();
-      const date = new Date(now * 1000);
-      const nowSec = date.getUTCMinutes() * 60 + date.getUTCSeconds();
+      // manual UTC MMSS -> seconds
+      const manual = document.getElementById("utc-manual").value;
+      if (manual.length !== 4) {
+        result.textContent = "現在のUTCをMMSS形式で入力してください";
+        return;
+      }
+      const nowMM = Number(manual.slice(0, 2));
+      const nowSS = Number(manual.slice(2, 4));
+      const nowSec = nowMM * 60 + nowSS;
 
       const hitRemain = remainSec + e.march;
       const hitUTCsec = nowSec + hitRemain;
