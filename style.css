@@ -12,8 +12,17 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.6); /* 透過レイヤー */
-  z-index: -1; /* ← これが超重要！ 背景の後ろに置く */
+  background: rgba(255, 255, 255, 0.7); /* 透過レイヤー */
+  z-index: -1; /* 背景の後ろに置く */
+}
+
+/* 背景OFF時 */
+body.bg-off {
+  background: #ffffff;
+}
+
+body.bg-off::before {
+  background: transparent;
 }
 
 
@@ -25,6 +34,7 @@ h1 {
 }
 
 section {
+  text-align: center;
   margin-bottom: 20px;
 }
 
@@ -35,8 +45,8 @@ section {
   padding: 12px 0;
 }
 
-#enemy-list div {
-  background: #ffffff;
+#enemy-list div,
+#ally-list div {
   padding: 14px;
   margin-bottom: 12px;
   border-radius: 12px;
@@ -45,8 +55,10 @@ section {
 
 input[type="text"],
 input[type="number"] {
-  width: 100%;
-  padding: 12px;
+  width: 77%;/* テキストボックスの幅 */
+  display: block;
+  margin: 0 auto;
+  padding: 25px;
   font-size: 18px;
   margin-bottom: 10px;
   border: 1px solid #d1d1d6;
@@ -55,8 +67,8 @@ input[type="number"] {
 }
 
 .btn {
-  width: 100%;
-  padding: 14px;
+  width: 80%;/* ボタンの幅 */
+  padding: 20px;
   font-size: 18px;
   border: none;
   border-radius: 12px;
@@ -89,11 +101,26 @@ input[type="number"] {
 }
 
 #result p {
-  background: #e5f5ff;
+  background: #ffffff;
+  color: #101010;
   padding: 12px;
   border-radius: 10px;
   margin-bottom: 10px;
-  font-size: 18px;
+  font-size: 50px;
+}
+
+#calc-list .result {
+  font-size: 30px;
+  font-weight: bold;
+  margin-top: 10px;
+  color: #101010;
+}
+
+#enemy-list div > p:first-child,
+#ally-list div > p:first-child {
+  font-size: 30px;
+  font-weight: bold;
+  color: #101010;
 }
 
 .menu-container {
@@ -106,9 +133,9 @@ input[type="number"] {
 
 .menu-btn {
   width: 90%;              /* 横幅を75%にして長すぎず短すぎず */
-  max-width: 300px;        /* タブレットでも大きくなりすぎない */
+  max-width: 400px;        /* タブレットでも大きくなりすぎない */
   padding: 45px;
-  font-size: 25px;
+  font-size: 40px;
   text-align: center;
   border-radius: 12px;
   font-weight: bold;
@@ -130,7 +157,7 @@ input[type="number"] {
   position: sticky;
   top: 0;
   z-index: 999;
-  background: #ffffff;
+  background: #0a0a0a;
   padding: 10px 0;
   display: flex;
   justify-content: space-around;
@@ -138,7 +165,7 @@ input[type="number"] {
 }
 
 .nav-bar a {
-  font-size: 14px;
+  font-size: 40px;
   color: #007aff;
   text-decoration: none;
   font-weight: bold;
