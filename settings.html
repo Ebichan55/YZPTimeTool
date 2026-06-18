@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>設定</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav class="nav-bar">
+    <a href="index.html">メニュー</a>
+    <a href="enemy_list.html">相手リスト</a>
+    <a href="calc.html">相手着弾計算</a>
+    <a href="ally_list.html">味方リスト</a>
+    <a href="ally_sync.html">差し込み計算</a>
+    <a href="settings.html">設定</a>
+  </nav>
+
+  <h1>設定</h1>
+
+  <section>
+    <h2>背景設定</h2>
+    <p id="bg-status"></p>
+    <button id="bg-toggle" class="btn">背景を OFF にする</button>
+  </section>
+
+  <script>
+    function loadBackgroundState() {
+      const bgEnabled = localStorage.getItem("backgroundEnabled");
+      const state = bgEnabled !== "false"; // デフォルトON
+      applyBackgroundState(state);
+      updateButton(state);
+    }
+
+    function applyBackgroundState(enabled) {
+      if (enabled) {
+        document.body.classList.remove("bg-off");
+        localStorage.setItem("backgroundEnabled", "true");
+      } else {
+        document.body.classList.add("bg-off");
+        localStorage.setItem("backgroundEnabled", "false");
+      }
+    }
+
+    function updateButton(enabled) {
+      const btn = document.getElementById("bg-toggle");
+      const status = document.getElementById("bg-status");
+      if (enabled) {
+        btn.textContent = "背景を OFF にする";
+        status.textContent = "背景: ON";
+      } else {
+        btn.textContent = "背景を ON にする";
+        status.textContent = "背景: OFF";
+      }
+    }
+
+    document.getElementById("bg-toggle").onclick = () => {
+      const currentState = localStorage.getItem("backgroundEnabled") !== "false";
+      const newState = !currentState;
+      applyBackgroundState(newState);
+      updateButton(newState);
+    };
+
+    loadBackgroundState();
+  </script>
+
+</body>
+</html>
