@@ -10,8 +10,8 @@
   <nav class="nav-bar">
     <a href="index.html">メニュー</a>
     <a href="enemy_list.html">相手リスト</a>
-    <a href="calc.html">相手着弾計算</a>
     <a href="ally_list.html">味方リスト</a>
+    <a href="calc.html">相手着弾計算</a>
     <a href="ally_sync.html">差し込み計算</a>
     <a href="settings.html">設定</a>
   </nav>
@@ -22,6 +22,23 @@
     <h2>背景設定</h2>
     <p id="bg-status"></p>
     <button id="bg-toggle" class="btn">背景を OFF にする</button>
+  </section>
+
+  <section>
+    <h2>表示設定</h2>
+    <p>カラーテーマ</p>
+    <select id="theme-select" class="setting-select">
+      <option value="auto">自動</option>
+      <option value="light">ライト</option>
+      <option value="dark">ダーク</option>
+    </select>
+
+    <p>画面モード</p>
+    <select id="device-select" class="setting-select">
+      <option value="auto">自動</option>
+      <option value="mobile">スマホ</option>
+      <option value="desktop">PC</option>
+    </select>
   </section>
 
   <script>
@@ -54,6 +71,48 @@
       }
     }
 
+    function getAutoTheme() {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+
+    function getAutoDeviceMode() {
+      return window.innerWidth <= 768 ? "mobile" : "desktop";
+    }
+
+    function applyThemeMode(mode) {
+      const selected = mode || "auto";
+      const effective = selected === "auto" ? getAutoTheme() : selected;
+      document.body.dataset.theme = effective;
+      localStorage.setItem("themeMode", selected);
+      const themeSelect = document.getElementById("theme-select");
+      if (themeSelect) themeSelect.value = selected;
+    }
+
+    function applyDeviceMode(mode) {
+      const selected = mode || "auto";
+      const effective = selected === "auto" ? getAutoDeviceMode() : selected;
+      document.body.dataset.device = effective;
+      localStorage.setItem("deviceMode", selected);
+      const deviceSelect = document.getElementById("device-select");
+      if (deviceSelect) deviceSelect.value = selected;
+    }
+
+    function applyVisualSettings() {
+      const savedTheme = localStorage.getItem("themeMode") || "auto";
+      const savedDevice = localStorage.getItem("deviceMode") || "auto";
+      applyThemeMode(savedTheme);
+      applyDeviceMode(savedDevice);
+    }
+
+    function refreshAutoSettings() {
+      if (localStorage.getItem("themeMode") === "auto") {
+        applyThemeMode("auto");
+      }
+      if (localStorage.getItem("deviceMode") === "auto") {
+        applyDeviceMode("auto");
+      }
+    }
+
     document.getElementById("bg-toggle").onclick = () => {
       const currentState = localStorage.getItem("backgroundEnabled") !== "false";
       const newState = !currentState;
@@ -61,7 +120,28 @@
       updateButton(newState);
     };
 
+    document.getElementById("theme-select").onchange = (event) => {
+      applyThemeMode(event.target.value);
+    };
+
+    document.getElementById("device-select").onchange = (event) => {
+      applyDeviceMode(event.target.value);
+    };
+
+    window.addEventListener("resize", () => {
+      const savedTheme = localStorage.getItem("themeMode") || "auto";
+      const savedDevice = localStorage.getItem("deviceMode") || "auto";
+      if (savedTheme === "auto") {
+        applyThemeMode("auto");
+      }
+      if (savedDevice === "auto") {
+        applyDeviceMode("auto");
+      }
+    });
+
     loadBackgroundState();
+    applyVisualSettings();
+    refreshAutoSettings();
   </script>
 
 </body>
