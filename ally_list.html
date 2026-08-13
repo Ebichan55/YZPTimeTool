@@ -12,7 +12,7 @@
     <a href="index.html">メニュー</a>
     <a href="enemy_list.html">相手リスト</a>
     <a href="ally_list.html">味方リスト</a>
-    <a href="calc.html">相手着弾計算</a>
+    <a href="calc.html">着弾計算</a>
     <a href="ally_sync.html">差し込み計算</a>
     <a href="settings.html">設定</a>
   </nav>
@@ -22,7 +22,18 @@
   <section>
     <input type="text" id="ally-name" placeholder="味方名">
     <input type="number" id="ally-march" placeholder="行軍時間（秒）">
-    <button id="add" class="btn">追加</button>
+    <label>
+      <input type="checkbox" id="ally-gathering">
+      集結主
+    </label>
+    <label>
+      <input type="checkbox" id="ally-switch-leader">
+      スイッチ基準主
+    </label>
+    <div class="ally-add-row">
+      <button id="add" class="btn">追加</button>
+      <button id="sort-allies" class="btn sort-btn" type="button" title="並び替え">↕</button>
+    </div>
   </section>
 
   <section>
@@ -71,6 +82,19 @@
       }
     });
 
+    function sortAllies() {
+      const list = JSON.parse(localStorage.getItem("allies") || "[]");
+      const sorted = [...list].sort((a, b) => {
+        const rankA = a.gatheringLeader && a.switchLeader ? 0 : a.gatheringLeader ? 1 : 2;
+        const rankB = b.gatheringLeader && b.switchLeader ? 0 : b.gatheringLeader ? 1 : 2;
+        if (rankA !== rankB) return rankA - rankB;
+        return (a.name || "").localeCompare(b.name || "", "ja");
+      });
+
+      localStorage.setItem("allies", JSON.stringify(sorted));
+      loadAllies();
+    }
+
     function loadAllies() {
       const list = JSON.parse(localStorage.getItem("allies") || "[]");
       const div = document.getElementById("ally-list");
@@ -82,6 +106,14 @@
             <div class="list-card-main">
               <p class="entry-name">${a.name}</p>
               <p class="entry-meta">行軍 ${a.march}秒</p>
+              <label class="entry-meta">
+                <input type="checkbox" ${a.gatheringLeader ? "checked" : ""} onchange="toggleGatheringLeader(${index}, this.checked)">
+                集結主
+              </label>
+              <label class="entry-meta">
+                <input type="checkbox" ${a.switchLeader ? "checked" : ""} onchange="toggleSwitchLeader(${index}, this.checked)">
+                スイッチ基準主
+              </label>
             </div>
             <div class="action-buttons">
               <button class="btn edit" onclick="editAlly(${index})">編集</button>
@@ -92,6 +124,23 @@
       });
     }
 
+    function toggleGatheringLeader(index, checked) {
+      const list = JSON.parse(localStorage.getItem("allies") || "[]");
+      if (!list[index]) return;
+      list[index].gatheringLeader = checked;
+      localStorage.setItem("allies", JSON.stringify(list));
+      loadAllies();
+    }
+
+    function toggleSwitchLeader(index, checked) {
+      const list = JSON.parse(localStorage.getItem("allies") || "[]");
+      if (!list[index]) return;
+
+      list[index].switchLeader = checked;
+      localStorage.setItem("allies", JSON.stringify(list));
+      loadAllies();
+    }
+
     function editAlly(index) {
       const list = JSON.parse(localStorage.getItem("allies") || "[]");
       const item = list[index];
@@ -100,6 +149,8 @@
       editingAllyIndex = index;
       document.getElementById("ally-name").value = item.name;
       document.getElementById("ally-march").value = item.march;
+      document.getElementById("ally-gathering").checked = Boolean(item.gatheringLeader);
+      document.getElementById("ally-switch-leader").checked = Boolean(item.switchLeader);
       document.getElementById("add").textContent = "更新";
       document.getElementById("ally-name").focus();
     }
@@ -116,31 +167,40 @@
 
       document.getElementById("ally-name").value = "";
       document.getElementById("ally-march").value = "";
+      document.getElementById("ally-gathering").checked = false;
+      document.getElementById("ally-switch-leader").checked = false;
       loadAllies();
     }
 
     document.getElementById("add").onclick = () => {
       const name = document.getElementById("ally-name").value;
       const march = Number(document.getElementById("ally-march").value);
+      const gatheringLeader = document.getElementById("ally-gathering").checked;
+      const switchLeader = document.getElementById("ally-switch-leader").checked;
 
       if (!name || march <= 0) return;
 
       const list = JSON.parse(localStorage.getItem("allies") || "[]");
+      const entry = { name, march, gatheringLeader, switchLeader };
 
       if (editingAllyIndex !== null) {
-        list[editingAllyIndex] = { name, march };
+        list[editingAllyIndex] = entry;
       } else {
-        list.push({ name, march });
+        list.push(entry);
       }
 
       localStorage.setItem("allies", JSON.stringify(list));
 
       document.getElementById("ally-name").value = "";
       document.getElementById("ally-march").value = "";
+      document.getElementById("ally-gathering").checked = false;
+      document.getElementById("ally-switch-leader").checked = false;
       editingAllyIndex = null;
       document.getElementById("add").textContent = "追加";
       loadAllies();
     };
+
+    document.getElementById("sort-allies").onclick = sortAllies;
 
     loadAllies();
   </script>
