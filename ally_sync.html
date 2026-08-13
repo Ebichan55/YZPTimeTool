@@ -11,8 +11,8 @@
   <nav class="nav-bar">
     <a href="index.html">メニュー</a>
     <a href="enemy_list.html">相手リスト</a>
-    <a href="calc.html">相手着弾計算</a>
     <a href="ally_list.html">味方リスト</a>
+    <a href="calc.html">相手着弾計算</a>
     <a href="ally_sync.html">差し込み計算</a>
     <a href="settings.html">設定</a>
   </nav>
@@ -28,20 +28,71 @@
   </section>
 
   <section>
+    <button id="copy-sync" class="btn copy" type="button">クリップボードにコピー</button>
+  </section>
+
+  <section>
     <h2>味方の出発UTC</h2>
     <div id="result"></div>
   </section>
 
   <script>
+    function getAutoTheme() {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+
+    function getAutoDeviceMode() {
+      return window.innerWidth <= 768 ? "mobile" : "desktop";
+    }
+
+    function applyThemeMode(mode) {
+      const selected = mode || "auto";
+      const effective = selected === "auto" ? getAutoTheme() : selected;
+      document.body.dataset.theme = effective;
+    }
+
+    function applyDeviceMode(mode) {
+      const selected = mode || "auto";
+      const effective = selected === "auto" ? getAutoDeviceMode() : selected;
+      document.body.dataset.device = effective;
+    }
+
     function loadBackgroundState() {
       const bgEnabled = localStorage.getItem("backgroundEnabled");
-      if (bgEnabled === "false") {
-        document.body.classList.add("bg-off");
-      }
+      document.body.classList.toggle("bg-off", bgEnabled === "false");
+      const savedTheme = localStorage.getItem("themeMode") || "auto";
+      const savedDevice = localStorage.getItem("deviceMode") || "auto";
+      applyThemeMode(savedTheme);
+      applyDeviceMode(savedDevice);
     }
     loadBackgroundState();
+    window.addEventListener("resize", () => {
+      if ((localStorage.getItem("themeMode") || "auto") === "auto") {
+        applyThemeMode("auto");
+      }
+      if ((localStorage.getItem("deviceMode") || "auto") === "auto") {
+        applyDeviceMode("auto");
+      }
+    });
 
-    const allies = JSON.parse(localStorage.getItem("allies") || "[]");
+    function saveSyncState(value, html, copyText = "") {
+      localStorage.setItem("syncState", JSON.stringify({ value, html, copyText }));
+    }
+
+    function loadSyncState() {
+      const saved = JSON.parse(localStorage.getItem("syncState") || "null");
+      if (!saved) return;
+
+      const enemyHitInput = document.getElementById("enemy-hit");
+      if (enemyHitInput && saved.value) {
+        enemyHitInput.value = saved.value;
+      }
+      if (saved.html) {
+        const result = document.getElementById("result");
+        result.innerHTML = saved.html;
+        result.dataset.copyText = saved.copyText || "";
+      }
+    }
 
     function secToMMSS(sec) {
       sec = ((sec % 3600) + 3600) % 3600;
@@ -50,35 +101,87 @@
       return mm + ss;
     }
 
-    document.getElementById("calc").onclick = () => {
+    function buildSyncCopyText(allies, enemyHitSec) {
+      return allies.map(a => {
+        const departSec = enemyHitSec - a.march;
+        const departMMSS = secToMMSS(departSec);
+        return `${a.name}:${departMMSS}`;
+      }).join("\n");
+    }
+
+    function runSyncCalculation() {
       const result = document.getElementById("result");
       result.innerHTML = "";
+      result.dataset.copyText = "";
 
+      const allies = JSON.parse(localStorage.getItem("allies") || "[]");
       if (allies.length === 0) {
-        result.innerHTML = "味方が登録されていません。味方リストで登録してください。";
+        const message = "味方が登録されていません。味方リストで登録してください。";
+        result.innerHTML = message;
+        saveSyncState(document.getElementById("enemy-hit").value.trim(), message, "");
         return;
       }
 
       const mmss = document.getElementById("enemy-hit").value.trim();
       const normalized = mmss.replace(/\D/g, "");
       if (normalized.length !== 4) {
-        result.innerHTML = "MMSS形式で入力してください";
+        const message = "MMSS形式で入力してください";
+        result.innerHTML = message;
+        saveSyncState(mmss, message, "");
         return;
       }
 
       const mm = Number(normalized.slice(0, 2));
       const ss = Number(normalized.slice(2, 4));
       const enemyHitSec = mm * 60 + ss;
+      let html = "";
 
       allies.forEach(a => {
         const departSec = enemyHitSec - a.march;
         const departMMSS = secToMMSS(departSec);
-
-        result.innerHTML += `
-          <p>${a.name} → 出発UTC：${departMMSS}</p>
-        `;
+        html += `<p class="sync-result-item">${a.name} → 出発UTC：${departMMSS}</p>`;
       });
-    };
+
+      const copyText = buildSyncCopyText(allies, enemyHitSec);
+      result.innerHTML = html;
+      result.dataset.copyText = copyText;
+      saveSyncState(mmss, html, copyText);
+    }
+
+    async function copySyncResults() {
+      const result = document.getElementById("result");
+      const copyText = result.dataset.copyText || "";
+      if (!copyText) return;
+
+      const button = document.getElementById("copy-sync");
+      try {
+        await navigator.clipboard.writeText(copyText);
+        button.textContent = "コピーしました";
+      } catch (error) {
+        const fallback = document.createElement("textarea");
+        fallback.value = copyText;
+        document.body.appendChild(fallback);
+        fallback.select();
+        document.execCommand("copy");
+        document.body.removeChild(fallback);
+        button.textContent = "コピーしました";
+      }
+
+      setTimeout(() => {
+        button.textContent = "クリップボードにコピー";
+      }, 1500);
+    }
+
+    const autoHitUTC = localStorage.getItem("syncAutoHitUTC") || "";
+    if (autoHitUTC) {
+      document.getElementById("enemy-hit").value = autoHitUTC;
+      runSyncCalculation();
+    } else {
+      loadSyncState();
+    }
+
+    document.getElementById("calc").onclick = runSyncCalculation;
+    document.getElementById("copy-sync").onclick = copySyncResults;
   </script>
 
 </body>
