@@ -1,24 +1,63 @@
+:root {
+  --bg-main: url("main_image.png") center/cover no-repeat fixed;
+  --bg-overlay: rgba(255, 255, 255, 0.5);
+  --panel-bg: rgba(230, 230, 230, 0.86);
+  --panel-strong: rgba(255, 255, 255, 0.92);
+  --input-bg: #fafafa;
+  --input-border: #d1d1d6;
+  --text-main: #101010;
+  --text-soft: #444;
+  --nav-bg: #0a0a0a;
+  --nav-link: #007aff;
+  --button-text: #ffffff;
+  --button-bg: #007aff;
+  --button-accent: #34c759;
+  --button-warning: #f0ad4e;
+  --button-danger: #d9534f;
+  --button-sync: #8e44ad;
+  --surface-shadow: rgba(0, 0, 0, 0.08);
+}
+
 body {
   margin: 0;
   padding: 0;
   position: relative;
   min-height: 100vh;
-  background: url("main_image.png") center/cover no-repeat fixed;
-  z-index: 0; /* 背景を一番下に */
+  background: var(--bg-main);
+  color: var(--text-main);
+  z-index: 0;
 }
 
-/* 背景の上にだけ透過レイヤーを敷く */
+body[data-theme="dark"] {
+  --bg-main: #101417;
+  --bg-overlay: rgba(16, 20, 23, 0.72);
+  --panel-bg: rgba(42, 48, 55, 0.92);
+  --panel-strong: rgba(20, 25, 30, 0.96);
+  --input-bg: #1e252d;
+  --input-border: #3d4753;
+  --text-main: #f3f7fb;
+  --text-soft: #c8d0d9;
+  --nav-bg: #0b0f12;
+  --nav-link: #79baff;
+  --button-text: #ffffff;
+  --button-bg: #2d7ef7;
+  --button-accent: #2dbb68;
+  --button-warning: #d68d2a;
+  --button-danger: #cf5a5a;
+  --button-sync: #a765d1;
+  --surface-shadow: rgba(0, 0, 0, 0.35);
+}
+
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.7); /* 透過レイヤー */
-  z-index: -1; /* 背景の後ろに置く */
+  background: var(--bg-overlay);
+  z-index: -1;
 }
 
-/* 背景OFF時 */
 body.bg-off {
-  background: #ffffff;
+  background: var(--panel-strong);
 }
 
 body.bg-off::before {
@@ -45,41 +84,119 @@ section {
   padding: 12px 0;
 }
 
-#enemy-list div,
-#ally-list div {
-  padding: 14px;
-  margin-bottom: 12px;
+#enemy-list,
+#ally-list {
+  max-width: 760px;
+  width: min(92vw, 760px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.setting-select {
+  width: min(62vw, 320px);
+  max-width: 320px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text-main);
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.list-card {
+  padding: 14px 16px;
   border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 6px var(--surface-shadow);
+  background: var(--panel-bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.list-card-main {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.entry-name {
+  margin: 0;
+  font-size: 30px;
+  font-weight: bold;
+  color: var(--text-main);
+  word-break: break-word;
+}
+
+.entry-meta {
+  margin: 6px 0 0;
+  font-size: 18px;
+  color: var(--text-soft);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  width: 46%;
+  min-width: 180px;
 }
 
 input[type="text"],
 input[type="number"] {
-  width: 77%;/* テキストボックスの幅 */
+  width: min(62vw, 320px);
+  max-width: 320px;
   display: block;
-  margin: 0 auto;
-  padding: 25px;
+  margin: 0 auto 10px;
+  padding: 14px 16px;
   font-size: 18px;
-  margin-bottom: 10px;
-  border: 1px solid #d1d1d6;
+  border: 1px solid var(--input-border);
   border-radius: 10px;
-  background: #fafafa;
+  background: var(--input-bg);
+  color: var(--text-main);
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .btn {
-  width: 80%;/* ボタンの幅 */
-  padding: 20px;
-  font-size: 18px;
+  width: min(62vw, 320px);
+  max-width: 320px;
+  padding: 14px 18px;
+  font-size: 16px;
   border: none;
   border-radius: 12px;
-  background: #007aff;
-  color: white;
+  background: var(--button-bg);
+  color: var(--button-text);
   font-weight: bold;
   margin-top: 10px;
+  box-sizing: border-box;
+  white-space: normal;
+  line-height: 1.4;
 }
+
+.action-buttons .btn {
+  width: 50%;
+  padding: 14px 10px;
+  margin-top: 0;
+  font-size: 16px;
+}
+
+.btn.edit {
+  background: var(--button-warning);
+  color: white;
+}
+
+.btn.edit:active {
+  background: #ec971f;
+}
+
 /* 削除ボタン（くすんだ赤） */
 .btn.delete {
-  background: #d9534f;
+  background: var(--button-danger);
   color: white;
 }
 
@@ -87,13 +204,20 @@ input[type="number"] {
   background: #c9302c;
 }
 
+.btn.sync {
+  background: var(--button-sync);
+}
+
+.btn.sync:active {
+  background: #6c3483;
+}
 
 .btn:active {
   background: #005fcc;
 }
 
 .calc {
-  background: #34c759;
+  background: var(--button-accent);
 }
 
 .calc:active {
@@ -109,18 +233,129 @@ input[type="number"] {
   font-size: 50px;
 }
 
+#calc-list {
+  max-width: 760px;
+  width: min(92vw, 760px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.calc-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--panel-bg);
+  box-shadow: 0 2px 6px var(--surface-shadow);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.calc-name {
+  width: 100%;
+  font-size: 24px;
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.calc-name span {
+  font-size: 16px;
+  color: var(--text-soft);
+}
+
+.calc-inputs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  width: 100%;
+  min-width: 0;
+}
+
+.calc-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+#calc-list .calc-input {
+  width: 280px !important;
+  min-width: 280px;
+  max-width: 280px;
+  flex-shrink: 0;
+  display: inline-block;
+  padding: 12px 10px;
+  font-size: 18px;
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--text-main);
+  text-align: center;
+  margin: 0;
+}
+
+#calc-list .btn.small {
+  width: 160px;
+  padding: 12px 10px;
+  margin-top: 0;
+  font-size: 16px;
+}
+
 #calc-list .result {
-  font-size: 30px;
+  width: 100%;
+  margin: 0;
+  font-size: 24px;
   font-weight: bold;
-  margin-top: 10px;
-  color: #101010;
+  color: var(--text-main);
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+#result {
+  max-width: 760px;
+  width: min(92vw, 760px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sync-result-item {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--panel-bg);
+  box-shadow: 0 2px 6px var(--surface-shadow);
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text-main);
+  text-align: center;
+}
+
+.calc-note {
+  font-size: 18px;
+  color: var(--text-soft);
+  margin-bottom: 16px;
 }
 
 #enemy-list div > p:first-child,
 #ally-list div > p:first-child {
   font-size: 30px;
   font-weight: bold;
-  color: #101010;
+  color: var(--text-main);
 }
 
 .menu-container {
@@ -157,19 +392,29 @@ input[type="number"] {
   position: sticky;
   top: 0;
   z-index: 999;
-  background: #0a0a0a;
+  background: var(--nav-bg);
   padding: 10px 0;
   display: flex;
   justify-content: space-around;
-  border-bottom: 1px solid #d1d1d6;
+  border-bottom: 1px solid var(--input-border);
 }
 
 .nav-bar a {
   font-size: 40px;
-  color: #007aff;
+  color: var(--nav-link);
   text-decoration: none;
   font-weight: bold;
   padding: 6px 4px;
+}
+
+body[data-device="mobile"] .nav-bar {
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 8px 10px;
+}
+
+body[data-device="mobile"] .nav-bar a {
+  font-size: 18px;
 }
 
 .nav-bar a:active {
