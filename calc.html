@@ -10,8 +10,8 @@
   <nav class="nav-bar">
     <a href="index.html">メニュー</a>
     <a href="enemy_list.html">相手リスト</a>
-    <a href="calc.html">相手着弾計算</a>
     <a href="ally_list.html">味方リスト</a>
+    <a href="calc.html">相手着弾計算</a>
     <a href="ally_sync.html">差し込み計算</a>
     <a href="settings.html">設定</a>
   </nav>
@@ -19,30 +19,79 @@
   <h1>相手着弾計算</h1>
 
   <section>
-    <h2>現在の UTC 時刻（MMSS）</h2>
-    <p>※UTCは手動でMMSS形式で入力してください。</p>
-    <input type="text" id="utc-manual" placeholder="例：0130">
-  </section>
-
-
-  <section>
     <h2>敵一覧</h2>
+    <p class="calc-note">※各相手ごとに UTC と残り時間を入力して計算できます。</p>
     <div id="calc-list"></div>
   </section>
 
   <script>
+    function getAutoTheme() {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+
+    function getAutoDeviceMode() {
+      return window.innerWidth <= 768 ? "mobile" : "desktop";
+    }
+
+    function applyThemeMode(mode) {
+      const selected = mode || "auto";
+      const effective = selected === "auto" ? getAutoTheme() : selected;
+      document.body.dataset.theme = effective;
+    }
+
+    function applyDeviceMode(mode) {
+      const selected = mode || "auto";
+      const effective = selected === "auto" ? getAutoDeviceMode() : selected;
+      document.body.dataset.device = effective;
+    }
+
     function loadBackgroundState() {
       const bgEnabled = localStorage.getItem("backgroundEnabled");
-      if (bgEnabled === "false") {
-        document.body.classList.add("bg-off");
-      }
+      document.body.classList.toggle("bg-off", bgEnabled === "false");
+      const savedTheme = localStorage.getItem("themeMode") || "auto";
+      const savedDevice = localStorage.getItem("deviceMode") || "auto";
+      applyThemeMode(savedTheme);
+      applyDeviceMode(savedDevice);
     }
     loadBackgroundState();
+    window.addEventListener("resize", () => {
+      if ((localStorage.getItem("themeMode") || "auto") === "auto") {
+        applyThemeMode("auto");
+      }
+      if ((localStorage.getItem("deviceMode") || "auto") === "auto") {
+        applyDeviceMode("auto");
+      }
+    });
 
-    const enemies = JSON.parse(localStorage.getItem("enemies") || "[]");
     const listDiv = document.getElementById("calc-list");
 
-    // 秒 → MMSS
+    function getEnemies() {
+      return JSON.parse(localStorage.getItem("enemies") || "[]");
+    }
+
+    function getCalcState() {
+      return JSON.parse(localStorage.getItem("calcState") || "[]");
+    }
+
+    function saveCalcState(state) {
+      localStorage.setItem("calcState", JSON.stringify(state));
+    }
+
+    function parseMMSS(value) {
+      if (!value || value.length !== 4 || Number.isNaN(Number(value))) {
+        return null;
+      }
+
+      const mm = Number(value.slice(0, 2));
+      const ss = Number(value.slice(2, 4));
+
+      if (mm < 0 || mm > 59 || ss < 0 || ss > 59) {
+        return null;
+      }
+
+      return mm * 60 + ss;
+    }
+
     function secToMMSS(sec) {
       sec = ((sec % 3600) + 3600) % 3600;
       const mm = String(Math.floor(sec / 60)).padStart(2, "0");
@@ -50,56 +99,139 @@
       return mm + ss;
     }
 
-    // 手動UTC入力を使用する（MMSS）
+    function buildCalcRows() {
+      const enemies = getEnemies();
+      const calcState = getCalcState();
+      listDiv.innerHTML = "";
 
+      enemies.forEach((e, index) => {
+        const saved = calcState[index] || {};
+        const row = document.createElement("div");
+        row.className = "calc-row";
 
-    // 敵一覧
-    enemies.forEach((e, index) => {
-      const row = document.createElement("div");
-      row.className = "enemy-card";
+        row.innerHTML = `
+          <div class="calc-name">
+            <b>${e.name}</b>
+            <span>（行軍 ${e.march}秒）</span>
+          </div>
+          <div class="calc-inputs">
+            <input type="text" id="utc-${index}" class="calc-input" placeholder="UTC MMSS" value="${saved.utc || ""}">
+            <input type="text" id="remain-${index}" class="calc-input" placeholder="残り MMSS" value="${saved.remain || ""}">
+          </div>
+          <div class="calc-action-row">
+            <button class="btn calc small" onclick="calcHit(${index})">計算</button>
+            <button class="btn delete small" onclick="deleteCalcEnemy(${index})">削除</button>
+            <button class="btn sync small" onclick="goToSync(${index})">差し込み</button>
+          </div>
+          <p id="result-${index}" class="result">${saved.result || ""}</p>
+        `;
 
-      row.innerHTML = `
-        <p><b>${e.name}</b>（行軍 ${e.march}秒）</p>
-        <input type="text" id="remain-${index}" placeholder="残り時間 MMSS">
-        <button class="btn calc" onclick="calcHit(${index})">計算</button>
-        <p id="result-${index}" class="result"></p>
-      `;
+        listDiv.appendChild(row);
+      });
+    }
 
-      listDiv.appendChild(row);
-    });
+    function persistCalcEntry(index, utc, remain, result) {
+      const enemies = getEnemies();
+      const state = getCalcState();
+      while (state.length < enemies.length) {
+        state.push({});
+      }
+      state[index] = { utc, remain, result };
+      saveCalcState(state);
+    }
 
-    // 計算（補正後UTC基準）
-    function calcHit(index) {
+    function computeHitUTC(index) {
+      const enemies = getEnemies();
       const e = enemies[index];
-      const mmss = document.getElementById(`remain-${index}`).value;
-      const result = document.getElementById(`result-${index}`);
+      if (!e) return null;
 
-      if (mmss.length !== 4) {
-        result.textContent = "MMSS形式で入力";
-        return;
+      const utcInput = document.getElementById(`utc-${index}`);
+      const remainInput = document.getElementById(`remain-${index}`);
+      if (!utcInput || !remainInput) return null;
+
+      const manual = utcInput.value.trim();
+      const mmss = remainInput.value.trim();
+      const nowSec = parseMMSS(manual);
+      const remainSec = parseMMSS(mmss);
+
+      if (nowSec === null || remainSec === null) {
+        return null;
       }
-
-      const mm = Number(mmss.slice(0, 2));
-      const ss = Number(mmss.slice(2, 4));
-      const remainSec = mm * 60 + ss;
-
-      // manual UTC MMSS -> seconds
-      const manual = document.getElementById("utc-manual").value;
-      if (manual.length !== 4) {
-        result.textContent = "現在のUTCをMMSS形式で入力してください";
-        return;
-      }
-      const nowMM = Number(manual.slice(0, 2));
-      const nowSS = Number(manual.slice(2, 4));
-      const nowSec = nowMM * 60 + nowSS;
 
       const hitRemain = remainSec + e.march;
       const hitUTCsec = nowSec + hitRemain;
-
-      const hitUTC = secToMMSS(hitUTCsec);
-
-      result.textContent = `着弾UTC：${hitUTC}`;
+      return secToMMSS(hitUTCsec);
     }
+
+    function calcHit(index) {
+      const enemies = getEnemies();
+      const e = enemies[index];
+      if (!e) return;
+
+      const utcInput = document.getElementById(`utc-${index}`);
+      const remainInput = document.getElementById(`remain-${index}`);
+      const result = document.getElementById(`result-${index}`);
+
+      const manual = utcInput.value.trim();
+      const mmss = remainInput.value.trim();
+
+      const nowSec = parseMMSS(manual);
+      const remainSec = parseMMSS(mmss);
+
+      if (nowSec === null) {
+        result.textContent = "UTCをMMSS形式で入力してください（例：0130）";
+        persistCalcEntry(index, manual, mmss, result.textContent);
+        return;
+      }
+
+      if (remainSec === null) {
+        result.textContent = "残り時間をMMSS形式で入力してください（例：0130）";
+        persistCalcEntry(index, manual, mmss, result.textContent);
+        return;
+      }
+
+      const hitUTC = computeHitUTC(index);
+      const resultText = hitUTC ? `着弾UTC：${hitUTC}` : "計算できませんでした";
+
+      result.textContent = resultText;
+      persistCalcEntry(index, manual, mmss, resultText);
+    }
+
+    function deleteCalcEnemy(index) {
+      const state = getCalcState();
+
+      if (!state[index]) {
+        state[index] = {};
+      }
+
+      state[index] = { utc: "", remain: "", result: "" };
+      saveCalcState(state);
+
+      const utcInput = document.getElementById(`utc-${index}`);
+      const remainInput = document.getElementById(`remain-${index}`);
+      const result = document.getElementById(`result-${index}`);
+
+      if (utcInput) utcInput.value = "";
+      if (remainInput) remainInput.value = "";
+      if (result) result.textContent = "";
+    }
+
+    function goToSync(index) {
+      const hitUTC = computeHitUTC(index);
+      if (!hitUTC) {
+        const resultEl = document.getElementById(`result-${index}`);
+        if (resultEl) {
+          resultEl.textContent = "UTCと残り時間を入力してください";
+        }
+        return;
+      }
+
+      localStorage.setItem("syncAutoHitUTC", hitUTC);
+      localStorage.setItem("syncAutoFromCalc", "true");
+      window.location.href = "ally_sync.html";
+    }
+
+    buildCalcRows();
   </script>
 
 </body>
