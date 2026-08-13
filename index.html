@@ -21,13 +21,43 @@
 
   <script>
     // 背景状態を読み込む
+    function getAutoTheme() {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+
+    function getAutoDeviceMode() {
+      return window.innerWidth <= 768 ? "mobile" : "desktop";
+    }
+
+    function applyThemeMode(mode) {
+      const selected = mode || "auto";
+      const effective = selected === "auto" ? getAutoTheme() : selected;
+      document.body.dataset.theme = effective;
+    }
+
+    function applyDeviceMode(mode) {
+      const selected = mode || "auto";
+      const effective = selected === "auto" ? getAutoDeviceMode() : selected;
+      document.body.dataset.device = effective;
+    }
+
     function loadBackgroundState() {
       const bgEnabled = localStorage.getItem("backgroundEnabled");
-      if (bgEnabled === "false") {
-        document.body.classList.add("bg-off");
-      }
+      document.body.classList.toggle("bg-off", bgEnabled === "false");
+      const savedTheme = localStorage.getItem("themeMode") || "auto";
+      const savedDevice = localStorage.getItem("deviceMode") || "auto";
+      applyThemeMode(savedTheme);
+      applyDeviceMode(savedDevice);
     }
     loadBackgroundState();
+    window.addEventListener("resize", () => {
+      if ((localStorage.getItem("themeMode") || "auto") === "auto") {
+        applyThemeMode("auto");
+      }
+      if ((localStorage.getItem("deviceMode") || "auto") === "auto") {
+        applyDeviceMode("auto");
+      }
+    });
   </script>
 
 
