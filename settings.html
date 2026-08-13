@@ -11,7 +11,7 @@
     <a href="index.html">メニュー</a>
     <a href="enemy_list.html">相手リスト</a>
     <a href="ally_list.html">味方リスト</a>
-    <a href="calc.html">相手着弾計算</a>
+    <a href="calc.html">着弾計算</a>
     <a href="ally_sync.html">差し込み計算</a>
     <a href="settings.html">設定</a>
   </nav>
@@ -39,6 +39,9 @@
       <option value="mobile">スマホ</option>
       <option value="desktop">PC</option>
     </select>
+
+    <p>スイッチ間隔（秒）</p>
+    <input type="number" id="switch-interval" min="0" step="1" placeholder="例：15">
   </section>
 
   <script>
@@ -100,8 +103,15 @@
     function applyVisualSettings() {
       const savedTheme = localStorage.getItem("themeMode") || "auto";
       const savedDevice = localStorage.getItem("deviceMode") || "auto";
+      const switchIntervalInput = document.getElementById("switch-interval");
+      const savedSwitchInterval = localStorage.getItem("switchIntervalSec");
+
       applyThemeMode(savedTheme);
       applyDeviceMode(savedDevice);
+
+      if (switchIntervalInput) {
+        switchIntervalInput.value = savedSwitchInterval !== null ? savedSwitchInterval : "0";
+      }
     }
 
     function refreshAutoSettings() {
@@ -126,6 +136,11 @@
 
     document.getElementById("device-select").onchange = (event) => {
       applyDeviceMode(event.target.value);
+    };
+
+    document.getElementById("switch-interval").oninput = (event) => {
+      const value = Number(event.target.value || 0);
+      localStorage.setItem("switchIntervalSec", String(Math.max(0, Number.isFinite(value) ? value : 0)));
     };
 
     window.addEventListener("resize", () => {
