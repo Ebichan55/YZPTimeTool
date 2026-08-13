@@ -162,6 +162,34 @@ input[type="number"] {
   text-align: center;
 }
 
+.ally-add-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.ally-add-row .btn {
+  margin-top: 0;
+  width: min(62vw, 320px);
+  max-width: 320px;
+}
+
+.sort-btn {
+  width: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
+  height: 44px;
+  padding: 0;
+  font-size: 24px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
 .btn {
   width: min(62vw, 320px);
   max-width: 320px;
@@ -349,6 +377,47 @@ input[type="number"] {
   font-size: 18px;
   color: var(--text-soft);
   margin-bottom: 16px;
+}
+
+.switch-summary {
+  position: fixed;
+  top: 90px;
+  right: 20px;
+  z-index: 10;
+  width: min(42vw, 260px);
+  padding: 14px 16px 12px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(103, 126, 255, 0.45);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+  text-align: center;
+  backdrop-filter: blur(2px);
+}
+
+.switch-summary::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: 12px;
+  width: 42px;
+  height: 28px;
+  border-radius: 50% 50% 40% 40%;
+  background: rgba(150, 170, 255, 0.22);
+}
+
+.switch-summary-label {
+  font-size: 14px;
+  color: var(--text-soft);
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+.switch-summary-time {
+  font-size: clamp(24px, 3vw, 38px);
+  font-weight: 900;
+  color: #1a1a1a;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
 }
 
 #enemy-list div > p:first-child,
