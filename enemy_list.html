@@ -11,8 +11,8 @@
   <nav class="nav-bar">
     <a href="index.html">メニュー</a>
     <a href="enemy_list.html">相手リスト</a>
-    <a href="calc.html">相手着弾計算</a>
     <a href="ally_list.html">味方リスト</a>
+    <a href="calc.html">相手着弾計算</a>
     <a href="ally_sync.html">差し込み計算</a>
     <a href="settings.html">設定</a>
   </nav>
@@ -35,13 +35,45 @@
   </section>
 
   <script>
+    let editingEnemyIndex = null;
+
+    function getAutoTheme() {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+
+    function getAutoDeviceMode() {
+      return window.innerWidth <= 768 ? "mobile" : "desktop";
+    }
+
+    function applyThemeMode(mode) {
+      const selected = mode || "auto";
+      const effective = selected === "auto" ? getAutoTheme() : selected;
+      document.body.dataset.theme = effective;
+    }
+
+    function applyDeviceMode(mode) {
+      const selected = mode || "auto";
+      const effective = selected === "auto" ? getAutoDeviceMode() : selected;
+      document.body.dataset.device = effective;
+    }
+
     function loadBackgroundState() {
       const bgEnabled = localStorage.getItem("backgroundEnabled");
-      if (bgEnabled === "false") {
-        document.body.classList.add("bg-off");
-      }
+      document.body.classList.toggle("bg-off", bgEnabled === "false");
+      const savedTheme = localStorage.getItem("themeMode") || "auto";
+      const savedDevice = localStorage.getItem("deviceMode") || "auto";
+      applyThemeMode(savedTheme);
+      applyDeviceMode(savedDevice);
     }
     loadBackgroundState();
+    window.addEventListener("resize", () => {
+      if ((localStorage.getItem("themeMode") || "auto") === "auto") {
+        applyThemeMode("auto");
+      }
+      if ((localStorage.getItem("deviceMode") || "auto") === "auto") {
+        applyDeviceMode("auto");
+      }
+    });
 
     function loadEnemies() {
       const list = JSON.parse(localStorage.getItem("enemies") || "[]");
@@ -50,18 +82,44 @@
 
       list.forEach((e, index) => {
         div.innerHTML += `
-          <div class="enemy-card">
-            <p>${e.name}（${e.march}秒）</p>
-            <button class="btn delete" onclick="deleteEnemy(${index})">削除</button>
+          <div class="list-card enemy-card">
+            <div class="list-card-main">
+              <p class="entry-name">${e.name}</p>
+              <p class="entry-meta">行軍 ${e.march}秒</p>
+            </div>
+            <div class="action-buttons">
+              <button class="btn edit" onclick="editEnemy(${index})">編集</button>
+              <button class="btn delete" onclick="deleteEnemy(${index})">削除</button>
+            </div>
           </div>
         `;
       });
+    }
+
+    function editEnemy(index) {
+      const list = JSON.parse(localStorage.getItem("enemies") || "[]");
+      const item = list[index];
+      if (!item) return;
+
+      editingEnemyIndex = index;
+      document.getElementById("enemy-name").value = item.name;
+      document.getElementById("enemy-march").value = item.march;
+      document.getElementById("add").textContent = "更新";
+      document.getElementById("enemy-name").focus();
     }
 
     function deleteEnemy(index) {
       const list = JSON.parse(localStorage.getItem("enemies") || "[]");
       list.splice(index, 1);
       localStorage.setItem("enemies", JSON.stringify(list));
+
+      if (editingEnemyIndex === index) {
+        editingEnemyIndex = null;
+        document.getElementById("add").textContent = "追加";
+      }
+
+      document.getElementById("enemy-name").value = "";
+      document.getElementById("enemy-march").value = "";
       loadEnemies();
     }
 
@@ -72,11 +130,19 @@
       if (!name || march <= 0) return;
 
       const list = JSON.parse(localStorage.getItem("enemies") || "[]");
-      list.push({ name, march });
+
+      if (editingEnemyIndex !== null) {
+        list[editingEnemyIndex] = { name, march };
+      } else {
+        list.push({ name, march });
+      }
+
       localStorage.setItem("enemies", JSON.stringify(list));
 
       document.getElementById("enemy-name").value = "";
       document.getElementById("enemy-march").value = "";
+      editingEnemyIndex = null;
+      document.getElementById("add").textContent = "追加";
       loadEnemies();
     };
 
