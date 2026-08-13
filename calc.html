@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>相手着弾計算</title>
+  <title>着弾計算</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,16 +11,33 @@
     <a href="index.html">メニュー</a>
     <a href="enemy_list.html">相手リスト</a>
     <a href="ally_list.html">味方リスト</a>
-    <a href="calc.html">相手着弾計算</a>
+    <a href="calc.html">着弾計算</a>
     <a href="ally_sync.html">差し込み計算</a>
     <a href="settings.html">設定</a>
   </nav>
 
-  <h1>相手着弾計算</h1>
+  <h1>着弾計算</h1>
 
   <section>
-    <h2>敵一覧</h2>
-    <p class="calc-note">※各相手ごとに UTC と残り時間を入力して計算できます。</p>
+    <h2>対象選択</h2>
+    <label>
+      <input type="checkbox" id="calc-target-enemy" checked>
+      敵
+    </label>
+    <label>
+      <input type="checkbox" id="calc-target-ally">
+      味方
+    </label>
+  </section>
+
+  <section>
+    <h2 id="calc-list-title">敵一覧</h2>
+    <p id="calc-note" class="calc-note">※各相手ごとに UTC と残り時間を入力して計算できます。</p>
+    <div id="switch-summary" class="switch-summary" hidden></div>
+    <div class="calc-header-actions">
+      <button id="bulk-calc" class="btn calc" type="button" hidden>一括計算</button>
+      <button id="copy-calc" class="btn copy" type="button">クリップボードにコピー</button>
+    </div>
     <div id="calc-list"></div>
   </section>
 
@@ -69,6 +86,32 @@
       return JSON.parse(localStorage.getItem("enemies") || "[]");
     }
 
+    function getAllies() {
+      return JSON.parse(localStorage.getItem("allies") || "[]");
+    }
+
+    function getSwitchIntervalSec() {
+      const value = Number(localStorage.getItem("switchIntervalSec") || "0");
+      return Number.isFinite(value) ? Math.max(0, value) : 0;
+    }
+
+    function getCurrentCalcEntries() {
+      const enemyChecked = document.getElementById("calc-target-enemy").checked;
+      const allyChecked = document.getElementById("calc-target-ally").checked;
+
+      if (allyChecked) {
+        const allies = getAllies();
+        const hasGatheringLeader = allies.some(a => a.gatheringLeader === true);
+        return hasGatheringLeader ? allies.filter(a => a.gatheringLeader === true) : allies;
+      }
+
+      if (enemyChecked || (!enemyChecked && !allyChecked)) {
+        return getEnemies();
+      }
+
+      return [];
+    }
+
     function getCalcState() {
       return JSON.parse(localStorage.getItem("calcState") || "[]");
     }
@@ -99,15 +142,145 @@
       return mm + ss;
     }
 
-    function buildCalcRows() {
-      const enemies = getEnemies();
-      const calcState = getCalcState();
-      listDiv.innerHTML = "";
+    function getRepresentativeSwitchTime(values) {
+      const valid = values.filter(value => value && parseMMSS(value) !== null);
+      if (valid.length === 0) return null;
 
-      enemies.forEach((e, index) => {
+      const hasAfterMidnight = valid.some(value => parseMMSS(value) < 60);
+      if (!hasAfterMidnight) {
+        return valid.reduce((best, current) => {
+          const bestSec = parseMMSS(best);
+          const currentSec = parseMMSS(current);
+          if (bestSec === null || currentSec === null) return best;
+          return currentSec > bestSec ? current : best;
+        }, valid[0]);
+      }
+
+      return valid.reduce((best, current) => {
+        const bestSec = parseMMSS(best);
+        const currentSec = parseMMSS(current);
+        if (bestSec === null || currentSec === null) return best;
+
+        const normalize = (sec) => (sec < 60 ? sec + 3600 : sec);
+        const bestNorm = normalize(bestSec);
+        const currentNorm = normalize(currentSec);
+        return currentNorm > bestNorm ? current : best;
+      }, valid[0]);
+    }
+
+    function buildSwitchSummaryText() {
+      const allyChecked = document.getElementById("calc-target-ally").checked;
+      if (!allyChecked) {
+        const summary = document.getElementById("switch-summary");
+        if (summary) {
+          summary.hidden = true;
+          summary.innerHTML = "";
+        }
+        return;
+      }
+
+      const entries = getCurrentCalcEntries();
+      const validTimes = [];
+
+      entries.forEach((entry, index) => {
+        const utcInput = document.getElementById(`utc-${index}`);
+        const remainInput = document.getElementById(`remain-${index}`);
+        if (!utcInput || !remainInput) return;
+
+        const manual = utcInput.value.trim();
+        const mmss = remainInput.value.trim();
+        if (!manual || !mmss) return;
+
+        const hitUTC = computeHitUTC(index);
+        if (!hitUTC || !entry.switchLeader) return;
+
+        const switchIntervalSec = getSwitchIntervalSec();
+        if (!switchIntervalSec) return;
+
+        const hitSec = parseMMSS(hitUTC);
+        if (hitSec === null) return;
+
+        validTimes.push(secToMMSS(hitSec + switchIntervalSec));
+      });
+
+      const summary = document.getElementById("switch-summary");
+      if (!summary) return;
+
+      if (validTimes.length === 0) {
+        summary.hidden = true;
+        summary.innerHTML = "";
+        return;
+      }
+
+      const latest = getRepresentativeSwitchTime(validTimes);
+      summary.hidden = false;
+      summary.innerHTML = `
+        <div class="switch-summary-label">代表スイッチ時間</div>
+        <div class="switch-summary-time">${latest}</div>
+      `;
+    }
+
+    function buildCalcCopyText() {
+      const entries = getCurrentCalcEntries();
+      const lines = [];
+
+      entries.forEach((e, index) => {
+        const utcInput = document.getElementById(`utc-${index}`);
+        const remainInput = document.getElementById(`remain-${index}`);
+        if (!utcInput || !remainInput) return;
+
+        const manual = utcInput.value.trim();
+        const mmss = remainInput.value.trim();
+        if (!manual || !mmss) return;
+
+        const hitUTC = computeHitUTC(index);
+        if (!hitUTC) return;
+
+        lines.push(`${e.name}:${hitUTC}`);
+      });
+
+      return lines.join("\n");
+    }
+
+    function calcAllCurrentEntries() {
+      const entries = getCurrentCalcEntries();
+      entries.forEach((_, index) => calcHit(index));
+    }
+
+    function buildCalcRows() {
+      const entries = getCurrentCalcEntries();
+      const calcState = getCalcState();
+      const title = document.getElementById("calc-list-title");
+      const note = document.getElementById("calc-note");
+      const allyChecked = document.getElementById("calc-target-ally").checked;
+      const bulkButton = document.getElementById("bulk-calc");
+
+      if (title) {
+        title.textContent = allyChecked ? "味方（集結主）一覧" : "敵一覧";
+      }
+
+      if (note) {
+        note.textContent = allyChecked ? "※各味方集結主ごとに UTC と残り時間を入力して計算できます。" : "※各相手ごとに UTC と残り時間を入力して計算できます。";
+      }
+
+      if (bulkButton) {
+        bulkButton.hidden = !allyChecked || entries.length === 0;
+      }
+
+      listDiv.innerHTML = "";
+      buildSwitchSummaryText();
+
+      if (entries.length === 0) {
+        const message = allyChecked ? "集結主の味方が登録されていません。味方リストで集結主にチェックを入れてください。" : "敵が登録されていません。敵リストで追加してください。";
+        listDiv.innerHTML = `<p class="result">${message}</p>`;
+        return;
+      }
+
+      entries.forEach((e, index) => {
         const saved = calcState[index] || {};
         const row = document.createElement("div");
         row.className = "calc-row";
+        const isAllyTarget = document.getElementById("calc-target-ally").checked;
 
         row.innerHTML = `
           <div class="calc-name">
@@ -121,7 +294,7 @@
           <div class="calc-action-row">
             <button class="btn calc small" onclick="calcHit(${index})">計算</button>
             <button class="btn delete small" onclick="deleteCalcEnemy(${index})">削除</button>
-            <button class="btn sync small" onclick="goToSync(${index})">差し込み</button>
+            ${isAllyTarget ? "" : '<button class="btn sync small" onclick="goToSync(${index})">差し込み</button>'}
           </div>
           <p id="result-${index}" class="result">${saved.result || ""}</p>
         `;
@@ -141,8 +314,8 @@
     }
 
     function computeHitUTC(index) {
-      const enemies = getEnemies();
-      const e = enemies[index];
+      const entries = getCurrentCalcEntries();
+      const e = entries[index];
       if (!e) return null;
 
       const utcInput = document.getElementById(`utc-${index}`);
@@ -163,9 +336,19 @@
       return secToMMSS(hitUTCsec);
     }
 
+    function getSwitchTimeFromHit(hitUTC) {
+      if (!hitUTC) return null;
+      const switchIntervalSec = getSwitchIntervalSec();
+      if (!switchIntervalSec) return null;
+
+      const hitSec = parseMMSS(hitUTC);
+      if (hitSec === null) return null;
+      return secToMMSS(hitSec + switchIntervalSec);
+    }
+
     function calcHit(index) {
-      const enemies = getEnemies();
-      const e = enemies[index];
+      const entries = getCurrentCalcEntries();
+      const e = entries[index];
       if (!e) return;
 
       const utcInput = document.getElementById(`utc-${index}`);
@@ -191,10 +374,23 @@
       }
 
       const hitUTC = computeHitUTC(index);
-      const resultText = hitUTC ? `着弾UTC：${hitUTC}` : "計算できませんでした";
+      const switchTime = getSwitchTimeFromHit(hitUTC);
+      const resultParts = [];
+
+      if (hitUTC) {
+        resultParts.push(`着弾UTC：${hitUTC}`);
+      }
+
+      const currentTarget = getCurrentCalcEntries()[index];
+      if (currentTarget && currentTarget.switchLeader && switchTime) {
+        resultParts.push(`スイッチ時間：${switchTime}`);
+      }
+
+      const resultText = resultParts.length ? resultParts.join(" / ") : "計算できませんでした";
 
       result.textContent = resultText;
       persistCalcEntry(index, manual, mmss, resultText);
+      buildSwitchSummaryText();
     }
 
     function deleteCalcEnemy(index) {
@@ -231,7 +427,54 @@
       window.location.href = "ally_sync.html";
     }
 
+    function bindTargetToggles() {
+      const enemyToggle = document.getElementById("calc-target-enemy");
+      const allyToggle = document.getElementById("calc-target-ally");
+
+      if (!enemyToggle || !allyToggle) return;
+
+      enemyToggle.addEventListener("change", () => {
+        if (enemyToggle.checked) {
+          allyToggle.checked = false;
+        }
+        buildCalcRows();
+      });
+
+      allyToggle.addEventListener("change", () => {
+        if (allyToggle.checked) {
+          enemyToggle.checked = false;
+        }
+        buildCalcRows();
+      });
+    }
+
+    async function copyCalcResults() {
+      const copyText = buildCalcCopyText();
+      if (!copyText) return;
+
+      const button = document.getElementById("copy-calc");
+      try {
+        await navigator.clipboard.writeText(copyText);
+        button.textContent = "コピーしました";
+      } catch (error) {
+        const fallback = document.createElement("textarea");
+        fallback.value = copyText;
+        document.body.appendChild(fallback);
+        fallback.select();
+        document.execCommand("copy");
+        document.body.removeChild(fallback);
+        button.textContent = "コピーしました";
+      }
+
+      setTimeout(() => {
+        button.textContent = "クリップボードにコピー";
+      }, 1500);
+    }
+
+    bindTargetToggles();
     buildCalcRows();
+    document.getElementById("copy-calc").onclick = copyCalcResults;
+    document.getElementById("bulk-calc").onclick = calcAllCurrentEntries;
   </script>
 
 </body>
