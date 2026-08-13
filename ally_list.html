@@ -11,8 +11,8 @@
   <nav class="nav-bar">
     <a href="index.html">メニュー</a>
     <a href="enemy_list.html">相手リスト</a>
-    <a href="calc.html">相手着弾計算</a>
     <a href="ally_list.html">味方リスト</a>
+    <a href="calc.html">相手着弾計算</a>
     <a href="ally_sync.html">差し込み計算</a>
     <a href="settings.html">設定</a>
   </nav>
@@ -31,13 +31,45 @@
   </section>
 
   <script>
+    let editingAllyIndex = null;
+
+    function getAutoTheme() {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+
+    function getAutoDeviceMode() {
+      return window.innerWidth <= 768 ? "mobile" : "desktop";
+    }
+
+    function applyThemeMode(mode) {
+      const selected = mode || "auto";
+      const effective = selected === "auto" ? getAutoTheme() : selected;
+      document.body.dataset.theme = effective;
+    }
+
+    function applyDeviceMode(mode) {
+      const selected = mode || "auto";
+      const effective = selected === "auto" ? getAutoDeviceMode() : selected;
+      document.body.dataset.device = effective;
+    }
+
     function loadBackgroundState() {
       const bgEnabled = localStorage.getItem("backgroundEnabled");
-      if (bgEnabled === "false") {
-        document.body.classList.add("bg-off");
-      }
+      document.body.classList.toggle("bg-off", bgEnabled === "false");
+      const savedTheme = localStorage.getItem("themeMode") || "auto";
+      const savedDevice = localStorage.getItem("deviceMode") || "auto";
+      applyThemeMode(savedTheme);
+      applyDeviceMode(savedDevice);
     }
     loadBackgroundState();
+    window.addEventListener("resize", () => {
+      if ((localStorage.getItem("themeMode") || "auto") === "auto") {
+        applyThemeMode("auto");
+      }
+      if ((localStorage.getItem("deviceMode") || "auto") === "auto") {
+        applyDeviceMode("auto");
+      }
+    });
 
     function loadAllies() {
       const list = JSON.parse(localStorage.getItem("allies") || "[]");
@@ -46,18 +78,44 @@
 
       list.forEach((a, index) => {
         div.innerHTML += `
-          <div class="enemy-card">
-            <p>${a.name}（${a.march}秒）</p>
-            <button class="btn delete" onclick="deleteAlly(${index})">削除</button>
+          <div class="list-card enemy-card">
+            <div class="list-card-main">
+              <p class="entry-name">${a.name}</p>
+              <p class="entry-meta">行軍 ${a.march}秒</p>
+            </div>
+            <div class="action-buttons">
+              <button class="btn edit" onclick="editAlly(${index})">編集</button>
+              <button class="btn delete" onclick="deleteAlly(${index})">削除</button>
+            </div>
           </div>
         `;
       });
+    }
+
+    function editAlly(index) {
+      const list = JSON.parse(localStorage.getItem("allies") || "[]");
+      const item = list[index];
+      if (!item) return;
+
+      editingAllyIndex = index;
+      document.getElementById("ally-name").value = item.name;
+      document.getElementById("ally-march").value = item.march;
+      document.getElementById("add").textContent = "更新";
+      document.getElementById("ally-name").focus();
     }
 
     function deleteAlly(index) {
       const list = JSON.parse(localStorage.getItem("allies") || "[]");
       list.splice(index, 1);
       localStorage.setItem("allies", JSON.stringify(list));
+
+      if (editingAllyIndex === index) {
+        editingAllyIndex = null;
+        document.getElementById("add").textContent = "追加";
+      }
+
+      document.getElementById("ally-name").value = "";
+      document.getElementById("ally-march").value = "";
       loadAllies();
     }
 
@@ -68,11 +126,19 @@
       if (!name || march <= 0) return;
 
       const list = JSON.parse(localStorage.getItem("allies") || "[]");
-      list.push({ name, march });
+
+      if (editingAllyIndex !== null) {
+        list[editingAllyIndex] = { name, march };
+      } else {
+        list.push({ name, march });
+      }
+
       localStorage.setItem("allies", JSON.stringify(list));
 
       document.getElementById("ally-name").value = "";
       document.getElementById("ally-march").value = "";
+      editingAllyIndex = null;
+      document.getElementById("add").textContent = "追加";
       loadAllies();
     };
 
